@@ -2,10 +2,216 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>私のホームページ</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>カスタムキーボード・シミュレーター</title>
+    <style>
+        :root {
+            --bg-color: #f4f7f6;
+            --container-bg: #ffffff;
+            --primary-color: #3498db;
+            --text-color: #2c3e50;
+            --border-color: #bdc3c7;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            margin-bottom: 10px;
+        }
+
+        .description {
+            margin-bottom: 20px;
+            color: #7f8c8d;
+            text-align: center;
+        }
+
+        .container {
+            background: var(--container-bg);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            max-width: 600px;
+            width: 100%;
+        }
+
+        .setting-section {
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 2px dashed var(--border-color);
+        }
+
+        .key-config {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .key-pair {
+            display: flex;
+            flex-direction: column;
+            background: #f8f9fa;
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+        }
+
+        .key-pair label {
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .key-pair input {
+            padding: 4px;
+            border: 1px solid var(--border-color);
+            border-radius: 3px;
+            text-align: center;
+        }
+
+        .output-section {
+            display: flex;
+            flex-direction: column;
+        }
+
+        textarea {
+            width: 100%;
+            height: 150px;
+            padding: 10px;
+            box-sizing: border-box;
+            border: 2px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 16px;
+            resize: vertical;
+            margin-bottom: 10px;
+        }
+
+        textarea:focus {
+            border-color: var(--primary-color);
+            outline: none;
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        .info-badge {
+            margin-top: 10px;
+            font-size: 13px;
+            color: #e74c3c;
+            font-weight: bold;
+        }
+    </style>
 </head>
 <body>
-    <h1>こんにちは！</h1>
-    <p>GitHub PagesでWebサイトを公開しました！</p>
+
+    <h1>カスタムキーボード設定</h1>
+    <p class="description">物理キーを押したときに、別の文字が出力されるように設定できます。</p>
+
+    <div class="container">
+        <div class="setting-section">
+            <h3>🔑 キーの割り当て設定</h3>
+            <p style="font-size: 13px; margin: 0; color:#666;">左のキーを押すと、右に入力した文字が出力されます（1文字推奨）</p>
+            
+            <div class="key-config">
+                <div class="key-pair">
+                    <label>「A」のキー</label>
+                    <input type="text" id="key-a" value="★" maxlength="5">
+                </div>
+                <div class="key-pair">
+                    <label>「S」のキー</label>
+                    <input type="text" id="key-s" value="こんにちは" maxlength="10">
+                </div>
+                <div class="key-pair">
+                    <label>「D」のキー</label>
+                    <input type="text" id="key-d" value="💡" maxlength="5">
+                </div>
+                <div class="key-pair">
+                    <label>「F」のキー</label>
+                    <input type="text" id="key-f" value="🚀" maxlength="5">
+                </div>
+            </div>
+        </div>
+
+        <div class="output-section">
+            <h3>📝 ここに入力してテスト</h3>
+            <textarea id="notepad" placeholder="ここにフォーカスを当てて、A, S, D, F キーを押してみてください..."></textarea>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <button id="clear-btn">テキストをクリア</button>
+                <div class="info-badge" id="status-msg"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const notepad = document.getElementById('notepad');
+        const clearBtn = document.getElementById('clear-btn');
+        const statusMsg = document.getElementById('status-msg');
+
+        // 対応するキーの入力欄を取得
+        const configMap = {
+            'a': document.getElementById('key-a'),
+            's': document.getElementById('key-s'),
+            'd': document.getElementById('key-d'),
+            'f': document.getElementById('key-f')
+        };
+
+        // キーボードが押された時の処理
+        notepad.addEventListener('keydown', function(event) {
+            // 押されたキー（小文字に統一）
+            const pressedKey = event.key.toLowerCase();
+
+            // 設定したキー（a, s, d, f）に含まれているかチェック
+            if (configMap[pressedKey]) {
+                // 本来の挙動（普通の「a」などの入力）をキャンセルする
+                event.preventDefault();
+
+                // 設定されているカスタム文字を取得
+                const customText = configMap[pressedKey].value;
+
+                // 現在のカーソル位置（選択範囲）を取得
+                const startPos = notepad.selectionStart;
+                const endPos = notepad.selectionEnd;
+
+                // カーソル位置にカスタム文字を挿入
+                const currentText = notepad.value;
+                notepad.value = currentText.substring(0, startPos) + customText + currentText.substring(endPos);
+
+                // カーソルの位置を挿入した文字の直後に移動
+                const newCursorPos = startPos + customText.length;
+                notepad.setSelectionRange(newCursorPos, newCursorPos);
+
+                // どのキーが発動したか画面に小さく表示
+                statusMsg.textContent = `キー [${event.key.toUpperCase()}] が連動しました！`;
+                setTimeout(() => { statusMsg.textContent = ''; }, 1000);
+            }
+        });
+
+        // クリアボタンの動作
+        clearBtn.addEventListener('click', function() {
+            notepad.value = '';
+            notepad.focus();
+        });
+    </script>
 </body>
 </html>
